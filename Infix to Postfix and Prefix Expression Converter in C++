@@ -1,0 +1,113 @@
+#include <iostream>
+#include <stack>
+#include <algorithm>
+
+using namespace std;
+
+// Function to check if a character is an operator
+bool isOperator(char c) {
+return (c == '+' || c == '-' || c == '*' || c == '/' || c == '^');
+}
+
+// Function to get precedence of operators
+int precedence(char c) {
+if (c == '+' || c == '-') return 1; // Lowest precedence
+if (c == '*' || c == '/') return 2;
+if (c == '^') return 3; // Power operator has highest precedence
+return 0;
+}
+
+// Function to check if parentheses are balanced
+bool areParenthesesBalanced(const string &expr) {
+int count = 0;
+for (char c : expr) {
+if (c == '(') count++;
+if (c == ')') count--;
+if (count < 0) return false; // More ')' than '(' at some point
+}
+return (count == 0);
+}
+
+// Infix to Postfix Conversion
+string infixToPostfix(string infix) {
+if (!areParenthesesBalanced(infix)) {
+return "ERROR: Unbalanced parentheses!";
+}
+
+stack<char> s;
+string postfix;
+
+for (char c : infix) {
+if (isalnum(c)) { // If character is operand (A-Z, a-z, 0-9)
+postfix += c; // Append operand directly to output
+} else if (c == '(') { // Left parenthesis
+s.push(c);
+} else if (c == ')') { // Right parenthesis
+while (!s.empty() && s.top() != '(') { // Pop till '(' is found
+postfix += s.top();
+s.pop();
+}
+if (!s.empty()) s.pop(); // Remove '(' from stack
+} else { // Operator case
+// Special case: `^` is **right-associative**, so it should NOT pop operators of equal precedence
+while (!s.empty() && s.top() != '(' &&
+((c != '^' && precedence(s.top()) >= precedence(c)) || // For +, -, *, /
+(c == '^' && precedence(s.top()) > precedence(c)))) { // For `^` (right-associative)
+postfix += s.top();
+s.pop();
+}
+s.push(c); // Push current operator onto stack
+}
+}
+
+// Pop all remaining operators in stack
+while (!s.empty()) {
+if (s.top() == '(') return "ERROR: Unbalanced parentheses!";
+postfix += s.top();
+s.pop();
+}
+
+return postfix;
+}
+
+// Infix to Prefix Conversion
+string infixToPrefix(string infix) {
+if (!areParenthesesBalanced(infix)) {
+return "ERROR: Unbalanced parentheses!";
+}
+
+// Reverse the infix expression to process it from right to left
+reverse(infix.begin(), infix.end());
+
+// Swap '(' with ')' and vice versa to maintain correct precedence
+for (char &c : infix) {
+if (c == '(') c = ')';
+else if (c == ')') c = '(';
+}
+
+// Convert modified infix to postfix notation
+string prefix = infixToPostfix(infix);
+
+if (prefix.find("ERROR") != string::npos) return prefix; // Return error if found
+
+// Reverse the result to get prefix notation
+reverse(prefix.begin(), prefix.end());
+
+return prefix;
+}
+
+// Main function to take input and convert expressions
+int main() {
+string expression;
+cout << "Enter infix expression: ";
+cin >> expression; // Take input from user
+
+string postfix = infixToPostfix(expression);
+string prefix = infixToPrefix(expression);
+
+// Display results
+cout << "Postfix: " << postfix << endl;
+cout << "Prefix: " << prefix << endl;
+
+return 0;
+}
